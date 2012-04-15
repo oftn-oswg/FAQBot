@@ -45,6 +45,6 @@
     (lambda (key)
       (hash-ref
        admins
-       key 1 ; default is 1 which is non-admin))))
+       key 1)))); default is 1 which is non-admin
 
 (provide (all-defined-out))
