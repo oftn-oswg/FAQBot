@@ -71,10 +71,6 @@
    new-cmd
    (get-id old-cmd))]))
 
-
-;; Command Dispatch Functions
-;; These functions take a string, parse it, and then execute the command
-
 ; associates a name with an id in Redis, then puts the question in couchdb
 (define (submit-question name content)
   (let* ([id (caar (hash-values [get-uuid]))])
