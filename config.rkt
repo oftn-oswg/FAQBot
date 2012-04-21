@@ -1,5 +1,6 @@
 #lang racket
 ; Config stuff
+;; This module is everything to do with grabbing info from the config file
 (define inp-port
   (open-input-file "./config.sexp"))
 
@@ -23,6 +24,9 @@
 (define config
   (update (make-hash)
           (read inp-port)))
+
+; get username
+(define irc-username (hash-ref config "username"))
 
 ; get database info
 (define database-info

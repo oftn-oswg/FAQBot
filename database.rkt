@@ -5,6 +5,9 @@
 (require "redis.rkt")
 (require "config.rkt")
 
+;; This module is all of the database stuff
+;; as well as the ratelimiting function
+
 ; Couch Database operations
 ; object used to connect to the database
 (define (database-connection database-name)
@@ -46,7 +49,9 @@
 
 ; strips all newlines
 (define (strip-newlines text)
-  (regexp-replace* #rx"\n" text ""))
+  (match text
+    ['nil 'nil]
+    [_ (regexp-replace* #rx"[\n\r]" text "")]))
 
 ; Redis Database Operations
 
@@ -112,9 +117,9 @@
     (let* ([hC-Current (time-magnitude (second counter) current-time)])
       (rate-check-helper hC-Current (first counter) n k))))
 
-; Allows no more than 20 commands every 5 minutes
+; Allows no more than 6 commands every 45 seconds
 ; resets after 5 minutes have passed from the last time it was reset
-(define allowed? (rate-check 20 (* 5 60000)))
+(define allowed? (rate-check 10 (* 2 60000)))
 ;; Admin Stuff
 
 (provide (all-defined-out))

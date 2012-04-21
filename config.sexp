@@ -3,11 +3,12 @@
  ("database"
  (("hostname" "localhost")
  ("port" 5984)
- ("user" "foo")
- ("pass" "bar")))
+ ("user" "")
+ ("pass" "")))
  ; bot administrators
  ("admins"
   (
-   ("foo" 0)
+   ("Nisstyre" 0)
    )
- ))
+ )
+ ("username" "wisdumb"))

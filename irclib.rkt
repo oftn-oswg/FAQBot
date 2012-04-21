@@ -1,6 +1,9 @@
 #lang racket
 
-; This module builds strings for requisite IRC commands
+;; These functions build strings for requisite IRC commands
+(require "commands.rkt")
+(require "database.rkt")
+(require "config.rkt")
 
 ; PRIVMSG command
 (define (privmsg target msg)
@@ -29,4 +32,96 @@
 (define (quit reason)
   (format "QUIT :~a"
           reason))
-  
+
+; NICK command
+(define (nick nickname)
+  (format "NICK ~a" nickname))
+
+; PING/PONG command
+(define (pingpong pingorpong message)
+  (match pingorpong
+    ["ping" (format "PING :~a" message)]
+    ["pong"
+     (format "PONG ~a" message)]))
+
+;; Parses IRC responses
+;; turns a list of words into a string
+;; and skips the first character
+(define content->string
+  (compose
+   string-tail
+   (lambda (words)
+     (string-join words " "))))
+
+(define (parse-hostmask hostmask)
+  (match (regexp-split #rx"!" hostmask)
+    [(list nick host)
+     (match (regexp-split #rx"@" host)
+       [(list username hostname) (list (string-tail nick)
+                                       username
+                                       hostname)])]))
+;; This function parses the raw IRC messages
+;; the output is intended to be used with the callback handler
+(define (parse-message message)
+  (match message
+    ['nil 'nil]
+    [_ (match (regexp-split #rx" " message)
+    ;; Matches a ping
+    [(list "PING" content) (list "PING" content)]
+    
+    ;; Matches a private message command
+    [(list-rest hostmask "PRIVMSG" channel content) 
+     (list "PRIVMSG" (parse-hostmask hostmask) channel 
+           (content->string content))]
+    
+    ;; Matches a Quit command
+    [(list-rest hostmask "QUIT" _) (list "QUIT" (parse-hostmask hostmask))]
+    
+    ;; Matches a Join command
+    [(list-rest hostmask "JOIN" (list channel)) 
+     (list "JOIN" (parse-hostmask hostmask) (string-tail channel))]
+    [_ 'nil])]))
+
+;; Callback handler
+;;This is how callback functions are chosen
+;;First we parse the IRC messages with parse-message
+;;then we use pattern matching to decide which callback
+;;function will be called
+;;It should be easy to add support for new IRC codes this way
+(define ((register-callbacks
+         privmsg-response
+         quit-response
+         join-response)
+         message)
+ 
+  (match message
+    ['nil 'nil]
+    [_ (match (parse-message (strip-newlines message)) ;MUST strip newlines and carriage returns
+    ; private message handler (called when we receive a private message)
+    ; First match to see if they are messaging us and not a channel! Or else we end up in an infinite loop
+    [(list "PRIVMSG" userinfo channel content)
+     (privmsg-response
+      ((curry privmsg) (me? channel (first userinfo)))
+      userinfo
+      content
+      join
+      ((curry part) (first userinfo)))]
+    ; JOIN handler (called when a user joins the channel)
+    [(list "JOIN" userinfo channel) (join-response
+                                     ((curry privmsg) 
+                                      channel)
+                                     userinfo)]
+    ; QUIT handler (called when a user quits)
+    [(list "QUIT" userinfo) (quit-response userinfo)]
+    ; PING handler (called when we receive a PING)
+    [(list "PING" message) 
+     (pingpong "pong" message)]
+    [_ 'nil])]))
+
+;; Check if a nick is the bot or not
+(define (me? channel recipient)
+  (cond
+  [(string=? irc-username channel) recipient]
+  (else channel)))
+
+(provide (all-defined-out))
