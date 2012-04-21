@@ -22,7 +22,10 @@
     
    [(list-rest "quit" (list message))
     (match (admin-info (first userinfo))
-    [0 (quit (first message))]
+    [0 (match message
+           [(list-rest quit-msg _)
+            (quit quit-msg)]
+         [_ 'nil])]
     [_ 'nil])]
     
    [result (send (format "~a is ~a" (first result) (dispatch userinfo content)))]))
