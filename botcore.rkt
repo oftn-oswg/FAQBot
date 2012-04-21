@@ -1,3 +1,4 @@
+#!  /usr/bin/racket
 #lang racket
 (require "irclib.rkt")
 (require "commands.rkt")
