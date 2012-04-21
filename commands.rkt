@@ -39,8 +39,12 @@
   (match (allowed?)
     [#f "Please try again in a few minutes"]
     [_ (match (parse-exclamation command)
-    [(list-rest "set" args) (submit-question (caar args) (string-join (cdar args) " "))
-                            "Done!"]
+    [(list-rest "set" args) (match args
+                              ; this part checks if the right number of arguments are there
+                              [(list (list name) (list-rest _ text)) 
+                               (submit-question name (string-join text " "))
+                               "Done!"]
+                              [_ 'nil])]
     [(list-rest "alias" (list args)) (make-alias (first args) (second args))]
     [(list-rest name _) (get-question name)]
          [_ 'nil])]))
