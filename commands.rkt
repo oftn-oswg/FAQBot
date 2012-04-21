@@ -1,4 +1,8 @@
 #lang racket
+;; This module is the commands used for the FAQBot itself
+;; These are intended to be used in callback functions
+;; for the irclib module (i.e. in response to private messages
+;; or whatever)
 (require "database.rkt")
 (require "config.rkt")
 ;; Command Parsing
@@ -32,8 +36,13 @@
 
 ;; Command Dispatcher
 (define (dispatch nick command)
-  (match (parse-exclamation command)
-    [(list-rest "set" args) (submit-question (caar args) (string-join (cdar args) " "))]
-    [(list-rest "alias" args) (make-alias (cadar args) (caar args))]
-    [(list-rest name _) (get-question name)]))
+  (match (allowed?)
+    [#f "Please try again in a few minutes"]
+    [_ (match (parse-exclamation command)
+    [(list-rest "set" args) (submit-question (caar args) (string-join (cdar args) " "))
+                            "Done!"]
+    [(list-rest "alias" (list args)) (make-alias (first args) (second args))]
+    [(list-rest name _) (get-question name)]
+         [_ 'nil])]))
 
+(provide (all-defined-out))
