@@ -105,7 +105,8 @@
       userinfo
       content
       join
-      ((curry part) (first userinfo)))]
+      ((curry part) (first userinfo))
+      quit)]
     ; JOIN handler (called when a user joins the channel)
     [(list "JOIN" userinfo channel) (join-response
                                      ((curry privmsg) 
