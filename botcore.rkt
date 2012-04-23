@@ -12,7 +12,7 @@
 
 ;; CALLBACK FUNCTIONS
 (define (privmsg-handler send userinfo content join part)
-  (match (parse-exclamation content)
+  (match (parse-at content)
    ['nil 'nil]
     
    ; joining a channel
@@ -29,7 +29,13 @@
          [_ 'nil])]
     [_ 'nil])]
     
-   [result (send (format "~a is ~a" (first result) (dispatch userinfo content)))]))
+   [result 
+    (let ([result (dispatch userinfo content)])
+      (display result)
+      (match result
+        ['nil 'nil]
+        [(? hash?) (send "OK")]
+        [_ (send (format "~a" result))]))]))
 
 ;; Callback for join messages
 (define (join-handler privmsg userinfo)

@@ -8,13 +8,19 @@
 ;; Command Parsing
 
 (define (string-head str)
-  (substring str 0 1))
+  (match (string-length str)
+    [(? ((curry <) 0)) (substring str 0 1)]
+    [_ #f]))
 
 (define (string-tail str)
-  (substring str 1 (string-length str)))
+  (match (string-length str)
+      [(? ((curry eq?) 0)) 'nil]
+      [len (substring str 1 len)]))
 
 (define (cmd? cmdchar cmd)
-  (string=? cmdchar (string-head cmd)))
+  (match (string-head cmd)
+    [#f #f]
+    [content (string=? cmdchar content)]))
 
 (define split-whitespace
   ((curry regexp-split) #rx" "))
@@ -29,24 +35,23 @@
    split-whitespace))
 
 (define parse-exclamation
-  (cmdparse "!"))
+  (cmdparse "?"))
 
 (define parse-at
-  (cmdparse "@"))
+  (cmdparse "?"))
 
 ;; Command Dispatcher
 (define (dispatch nick command)
   (match (allowed?)
-    [#f "Please try again in a few minutes"]
-    [_ (match (parse-exclamation command)
-    [(list-rest "set" args) (match args
+    [#f 'nil]
+    [_ (match (parse-at command) ; if we are allowed, proceed
+    [(list-rest "set" args) (match (car args)
                               ; this part checks if the right number of arguments are there
-                              [(list (list name) (list-rest _ text)) 
-                               (submit-question name (string-join text " "))
-                               "Done!"]
+                              [(list-rest name text) 
+                               (submit-question name (string-join text " "))]
+                              ; if for some reason this did not work, return nil
                               [_ 'nil])]
-    [(list-rest "alias" (list args)) (make-alias (first args) (second args))]
-    [(list-rest name _) (get-question name)]
-         [_ 'nil])]))
+    [(list-rest "alias" (list (list new old))) (make-alias new old)]
+    [(list-rest name _) (get-question name)])]))
 
 (provide (all-defined-out))

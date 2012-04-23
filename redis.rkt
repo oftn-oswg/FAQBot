@@ -68,136 +68,135 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COMMANDS
 
-(define (ping)
+(define (redis-ping)
   (send-command "PING")
   (read-reply))
 
 ;; Connection handling
 
-(define (quit)
+(define (redis-quit)
   (send-command "QUIT")
   (disconnect!))
 
-(define (auth)
+(define (redis-auth)
   (send-command "AUTH")
   (read-reply))
 
 ;; Commands operating on all value types
 
-(define (exists? key)
+(define (redis-exists? key)
   (send-command "EXISTS" key) 
   (match (read-reply)
          [1 #t]
          [0 #f]))
 
-(define del!
+(define redis-del!
   (lambda keys
     (apply send-command `("DEL" ,@keys))
     (read-reply)))
 
-(define (type key)
+(define (redis-type key)
   (send-command "TYPE" key)
   (string->symbol (read-reply)))
 
-(define (keys pattern)
+(define (redis-keys pattern)
   (send-command "KEYS" pattern)
   (read-reply))
 
-(define (randomkey)
+(define (redis-randomkey)
   (send-command "RANDOMKEY")
   (read-reply))
 
-
-(define (rename! oldkey newkey)
+(define (redis-rename! oldkey newkey)
   (send-command "RENAME" oldkey newkey)
   (read-reply))
 
-(define (renamenx! oldkey newkey)
+(define (redis-renamenx! oldkey newkey)
   (send-command "RENAME" oldkey newkey)
   (match (read-reply)
          [1 #t]
          [0 #f]))
 
-(define (dbsize)
+(define (redis-dbsize)
   (send-command "DBSIZE")
   (read-reply))
 
-(define (expire! key seconds)
+(define (redis-expire! key seconds)
   (send-command "EXPIRE" key seconds)
   (read-reply))
 
-(define (expireat! key date)
+(define (redis-expireat! key date)
   (send-command "EXPIREAT" key (date->seconds date))
   (read-reply))
 
-(define (ttl key)
+(define (redis-ttl key)
   (send-command "TTL" key)
   (read-reply))
 
-(define (select key)
+(define (redis-select key)
   (send-command "SELECT" key)
   (read-reply))
 
-(define (move key dbindex)
+(define (redis-move key dbindex)
   (send-command "MOVE" key dbindex)
   (read-reply))
 
-(define (flushdb)
+(define (redis-flushdb)
   (send-command "FLUSHDB")
   (read-reply))
 
-(define (flushall)
+(define (redis-flushall)
   (send-command "FLUSHALL")
   (read-reply))
 
-(define (set key value)
+(define (redis-set key value)
   (send-command "SET" key value)
   (read-reply))
 
-(define (get key)
+(define (redis-get key)
   (send-command "GET" key)
   (read-reply))
 
-(define (getset key value)
+(define (redis-getset key value)
   (send-command "GETSET" key value)
   (read-reply))
 
-(define mget
+(define redis-mget
   (lambda keys
     (apply send-command `("MGET" ,@keys)
     (read-reply))))
 
-(define (incrby key n)
+(define (redis-incrby key n)
   (send-command "INCRBY" key n)
   (read-reply))
 
 ;; Hash commands
 
-(define (hset key field value)
+(define (redis-hset key field value)
   (send-command "HSET" key field value)
   (read-reply))
 
-(define (hget key field)
+(define (redis-hget key field)
   (send-command "HGET" key field)
   (read-reply))
 
-(define (hgetall key)
+(define (redis-hgetall key)
   (send-command "HGETALL" key)
   (read-reply))
 
-(define (hincrby key field num)
+(define (redis-hincrby key field num)
   (send-command "HINCRBY" key field num)
   (read-reply))
 
-(define (hincrbyfloat key field num)
+(define (redis-hincrbyfloat key field num)
   (send-command "HINCRBYFLOAT" key field num)
   (read-reply))
 
-(define (hkeys key)
+(define (redis-hkeys key)
   (send-command "HKEYS" key)
   (read-reply))
 
-(define (hvals key)
+(define (redis-hvals key)
   (send-command "HVALS" key)
   (read-reply))
 
