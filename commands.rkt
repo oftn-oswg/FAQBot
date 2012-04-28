@@ -34,9 +34,6 @@
                             (cdr command))]))
    split-whitespace))
 
-(define parse-exclamation
-  (cmdparse "?"))
-
 (define parse-at
   (cmdparse "?"))
 
