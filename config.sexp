@@ -9,6 +9,7 @@
  ("admins"
   (
    ("Nisstyre" 0)
+   ("Nisstyre-laptop" 0)
    )
  )
  ("username" "wisdumb"))

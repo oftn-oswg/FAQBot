@@ -115,8 +115,14 @@
     ; QUIT handler (called when a user quits)
     [(list "QUIT" userinfo) (quit-response userinfo)]
     ; PING handler (called when we receive a PING)
-    [(list "PING" message) 
+    [(list "PING" message)
+     (display (format "pinging with ~a\n" message))
      (pingpong "pong" message)]
+    
+    ; PONG handler
+    [(list "PONG" _)
+     (display "received a pong\n")]
+    
     [_ 'nil])]))
 
 ;; Check if a nick is the bot or not
