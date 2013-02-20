@@ -6,10 +6,10 @@
 (require "config.rkt")
 (require "callbacks.rkt")
 
-;Here is how the connection flow has to go
-;First send the NICK and USER commands to the server
-;Wait a few seconds for a PING, if no PING increase
-;the wait time by the last time * 1.5 to a maximum of n seconds
+;; frequency of pings
+(define *PING* 40)
+;; amount of time to wait on a command before failing
+(define *TIMEOUT* 20)
 
 ;; Timeout combinator, tries to get output and times out if there is none
 (define ((timeout-check max-wait) input?)
@@ -19,7 +19,7 @@
            (match (input?)
              ['nil 
               (cond
-                     [(> acc max-wait) 'nil]
+                     [(> acc max-wait) "done"]
                      [else (matcher (* acc 1.5))])]
              [result
               (display (format "~a\n" result)) ;; display each line being received
@@ -38,14 +38,11 @@
          [(? eof-object?) "done"]
          [_ result])))))
 ;; Gets input and parses it
-(define (get-input parse inport)
+(define (get-input inport)
    (let ([result ((get-raw-input inport))])
      (match result
        ["done" "done"]
-       [_ (parse-input result)])))
-
-(define (input? port)
-   (get-input parse-input port))
+       [_ result])))
 
 ;; Sends raw text to the irc server
 (define ((put-raw-output text port))
@@ -70,23 +67,33 @@
 
 ;; maybe ping back?
 (define (ping-server out)
-  (sleep 20)
+  (sleep *PING*)
   ((put-raw-output 
     (pingpong "ping" (format "~a" (current-seconds)))
     out))
   (ping-server out))
-       
+
+(define (handle-input out input-string)
+  (thread (λ () 
+         (let ([thd 
+                (thread (λ() 
+                          (match (parse-input input-string)
+                            ['nil 'nil]
+                            [result ((put-raw-output result out))])))])
+           (sync/timeout *TIMEOUT* (thread-dead-evt thd))
+           (kill-thread thd)))))
+
+
 ;; The main loop that the bot runs in
 (define (ircloop in out)
   (letrec ([inner-loop 
   (λ ()
     (match in
     ['nil 'nil]
-      [_ (match (input? in)
+      [_ (match (get-input in)
            ["done" 'nil]
-           ['nil (inner-loop)]
            [result
-            ((put-raw-output result out))
+            (handle-input out result)
             (inner-loop)])]))])
     (initial-work in out)
     (display "done initial work\n")
