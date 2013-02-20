@@ -11,38 +11,13 @@
 ;; amount of time to wait on a command before failing
 (define *TIMEOUT* 20)
 
-;; Timeout combinator, tries to get output and times out if there is none
-(define ((timeout-check max-wait) input?)
-  (letrec ([matcher 
-         (lambda (acc)
-           (sleep acc)
-           (match (input?)
-             ['nil 
-              (cond
-                     [(> acc max-wait) "done"]
-                     [else (matcher (* acc 1.5))])]
-             [result
-              (display (format "~a\n" result)) ;; display each line being received
-              result]))])
-    (matcher 0.000015)))
-;; create a timeout function
-(define check (timeout-check 3))
-
 ;; Base input stuff
 ;; raw input getter
-(define ((get-raw-input port))
-  (check
-   (λ () 
-     (let ([result (read-line port 'return)])
+(define (get-input port)
+  (let ([result (read-line port 'return)])
        (match result
          [(? eof-object?) "done"]
-         [_ result])))))
-;; Gets input and parses it
-(define (get-input inport)
-   (let ([result ((get-raw-input inport))])
-     (match result
-       ["done" "done"]
-       [_ result])))
+         [_ result])))
 
 ;; Sends raw text to the irc server
 (define ((put-raw-output text port))
