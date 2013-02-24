@@ -1,15 +1,10 @@
 #!  /usr/bin/racket
 #lang racket
 (require "irclib.rkt")
-(require "commands.rkt")
-(require "database.rkt")
 (require "config.rkt")
 (require "callbacks.rkt")
-
-;; frequency of pings
-(define *PING* 40)
-;; amount of time to wait on a command before failing
-(define *TIMEOUT* 20)
+(require "services.rkt")
+(require "output.rkt")
 
 ;; Base input stuff
 ;; raw input getter
@@ -19,16 +14,11 @@
          [(? eof-object?) "done"]
          [_ result])))
 
-;; Sends raw text to the irc server
-(define ((put-raw-output text port))
-  (display (format "trying to send ~a\n" text))
-  (display (format "~a\r\n" text) port)
-  (flush-output port))
-
 ;; Setting the callbacks
-(define parse-input (register-callbacks privmsg-handler
-                                   quit-handler
-                                   join-handler))
+(define parse-input (register-callbacks               
+                     privmsg-handler
+                     quit-handler
+                     join-handler))
 
 ;; The actual setup of the connection
 ;; Initial startup commands
@@ -40,40 +30,29 @@
   (display (format "USER ~a 8 * ~a\r\n" username realname) out))
   (flush-output out))
 
-;; maybe ping back?
-(define (ping-server out)
-  (sleep *PING*)
-  ((put-raw-output 
-    (pingpong "ping" (format "~a" (current-seconds)))
-    out))
-  (ping-server out))
-
-(define (handle-input out input-string)
-  (thread (λ () 
-         (let ([thd 
-                (thread (λ() 
-                          (match (parse-input input-string)
-                            ['nil 'nil]
-                            [result ((put-raw-output result out))])))])
-           (sync/timeout *TIMEOUT* (thread-dead-evt thd))
-           (kill-thread thd)))))
-
+(make-handler handle-input
+              (out qs input-string)
+              (match (parse-input qs input-string)
+                     ['nil 'nil]
+                     [result ((put-raw-output result out))]))
 
 ;; The main loop that the bot runs in
 (define (ircloop in out)
   (letrec ([inner-loop 
-  (λ ()
+  (λ (query-service)
     (match in
-    ['nil 'nil]
+    ['nil "Exited"]
       [_ (match (get-input in)
-           ["done" 'nil]
+           ["done" 
+            (query-service 'kill)
+            "Exited"]
            [result
-            (handle-input out result)
-            (inner-loop)])]))])
+            ;(displayln result)
+            (handle-input out query-service result)
+            (inner-loop query-service)])]))])
     (initial-work in out)
-    (display "done initial work\n")
-    (thread (λ () (ping-server out)))
-    (inner-loop)))
+    (displayln "done initial work\n")
+    (inner-loop (make-querier out services))))
 
 ;; The connector, connects to a network and then passes control to the main loop
 (define (connect hostname port)

@@ -3,27 +3,29 @@
 (require "config.rkt")
 
 ;; CALLBACK FUNCTIONS
-(define (privmsg-handler send userinfo content join part quit)
+(define (privmsg-handler qs send userinfo content join part quit)
   (match (parse-at content)
    ['nil 'nil]
+    
+   [(list-rest "help" r) (send "RTFM")]
     
    ; joining a channel
    [(list-rest "join" args) 
     (match (admin-info (first userinfo)) ; check to see if we have privileges, 0 = highest privs
-    [0 (join (car (first args)))]
-    [_ 'nil])]
+      [0 (join (car (first args)))]
+      [_ 'nil])]
     
    [(list-rest "quit" (list message))
     (match (admin-info (first userinfo))
-    [0 (match message
+      [0 (match message
            [(list-rest quit-msg _)
             (quit quit-msg)]
-         [_ 'nil])]
-    [_ 'nil])]
+           [_ 'nil])]
+      [_ 'nil])]
     
    [result 
     (let ([result (dispatch userinfo content)])
-      (display result)
+      ;(display result)
       (match result
         ['nil 'nil]
         [(? hash?) (send "OK")]
@@ -31,9 +33,10 @@
 
 ;; Callback for join messages
 (define (join-handler privmsg userinfo)
-  userinfo)
+  'nil)
 ;; Callback for quit messages
 (define (quit-handler userinfo)
-  userinfo)
+  'nil)
+
 
 (provide (all-defined-out))

@@ -127,7 +127,8 @@
     [(and (> k mag) (eq? hN n)) #f]
     [(and (< mag k) (< hN n)) (redis-hincrby "counter" "n" "1") #t]
     [else (redis-hset "counter" "n" "0")
-          (redis-hset "counter" "current" (number->string (current-inexact-milliseconds)))
+          (redis-hset "counter" "current" 
+                      (number->string (current-inexact-milliseconds)))
           #t])))
 
 (define ((rate-check n k))
@@ -136,9 +137,11 @@
     (let* ([hC-Current (time-magnitude (second counter) current-time)])
       (rate-check-helper hC-Current (first counter) n k))))
 
-; Allows no more than 6 commands every 45 seconds
-; resets after 5 minutes have passed from the last time it was reset
+; Allows no more than n commands every k seconds
+; resets after h minutes have passed from the last time it was reset
 (define allowed? (rate-check 10 (* 2 60000)))
-;; Admin Stuff
+
+;(define (stack-push! item)
+  
 
 (provide (all-defined-out))

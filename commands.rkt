@@ -42,6 +42,7 @@
   (match (allowed?)
     [#f 'nil]
     [_ (match (parse-at command) ; if we are allowed, proceed
+    ['nil 'nil]
     [(list-rest "set" args) (match (car args)
                               ; this part checks if the right number of arguments are there
                               [(list-rest name text) 

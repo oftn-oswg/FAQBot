@@ -69,6 +69,9 @@
     ;; Matches a ping
     [(list "PING" content) (list "PING" content)]
     
+    ;; Matches a pong
+    [(list "PONG" _ content) (list "PONG" content)]
+    
     ;; Matches a private message command
     [(list-rest hostmask "PRIVMSG" channel content) 
      (list "PRIVMSG" (parse-hostmask hostmask) channel 
@@ -88,10 +91,14 @@
 ;;then we use pattern matching to decide which callback
 ;;function will be called
 ;;It should be easy to add support for new IRC codes this way
+;; query-service allows you to interact with daemons running
+;; it is the callback and daemon's responsibility to make sure everything is thread
+; safe/atomic/etc...
 (define ((register-callbacks
          privmsg-response
          quit-response
          join-response)
+         query-service
          message)
  
   (match message
@@ -101,6 +108,7 @@
     ; First match to see if they are messaging us and not a channel! Or else we end up in an infinite loop
     [(list "PRIVMSG" userinfo channel content)
      (privmsg-response
+      query-service
       ((curry privmsg) (me? channel (first userinfo)))
       userinfo
       content
